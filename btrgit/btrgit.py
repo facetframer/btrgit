@@ -20,19 +20,29 @@ def build_parser():
     parser.add_argument('--debug', action='store_true', help='Print debug output')
     parsers = parser.add_subparsers(dest='command')
 
+    volumes_parser = parsers.add_parser('volumes', help='Show the subvolumes ')
+    volumes_parser.add_argument('path', type=str)
+
     log_parser = parsers.add_parser('log', help='Show changes made to a file')
-    log_parser.add_argument('path', type=str, help='Path to operate on')
+    log_parser.add_argument('path', type=str, help='Path to operate on', nargs='?', default='.')
     log_parser.add_argument('commit', nargs='?', help='Show what changed in this snapshot (regular expression)', type=str)
     log_parser.add_argument('--no-files', action='store_true', help='Do not show files that have changed (just snapshots)')
-
     show_mx = log_parser.add_mutually_exclusive_group()
     show_mx.add_argument('--all', action='store_true', help='Show all changes before')
     show_mx.add_argument('--single', action='store_true', help='Show just this change')
+
+    copy_parser = parsers.add_parser('copy', help='Copy a file or directory at a particular commit')
+    copy_parser.add_argument('path', type=str, help='Path to operate on')
+    copy_parser.add_argument('commit', type=int, help='Show what changed in this snapshot (regular expression)')
+    copy_parser.add_argument('target_path', type=str, help='Path to copy to', nargs='?')
+
+
     return parser
 
-Snapshot = collections.namedtuple('Snapshot', 'snapshot transaction old_transaction')
+Snapshot = collections.namedtuple('Snapshot', 'path transaction old_transaction commit creation_time')
 
 def get_subvolumes(mount):
+    LOGGER.debug('Getting subvolumes for mount: %r', mount)
     string = subprocess.check_output(
         "btrfs subvolume list {} | cut -d ' ' -f 4,9".format(pipes.quote(mount)),
         shell=True)
@@ -48,11 +58,16 @@ def get_subvolumes(mount):
     snapshots = [p[0] for p in pairs]
     transactions = [p[1] for p in pairs]
 
+    # snapper snapshots only
+    # /home/.snapshots/2146/snapshot
     snapshots = [os.path.join(mount, snapshot) for snapshot in snapshots]
 
     old_transactions = transactions[1:] + ['0']
-    info =  zip(snapshots, transactions, old_transactions)
-    snapshots = itertools.starmap(Snapshot, info)
+    commits = [s.split('/')[-2] for s in snapshots]
+    commits = [int(c) if c.isdigit() else None for c in commits]
+    creation_times = map(get_creation_time, snapshots)
+    info =  zip(snapshots, transactions, old_transactions, commits, creation_times)
+    snapshots = list(itertools.starmap(Snapshot, info))
     return snapshots
 
 def mount_points():
@@ -79,37 +94,65 @@ def find_mount(mount_points, path):
 def main():
     LOGGER.debug('Starting')
     args = build_parser().parse_args()
+    args.path = os.path.abspath(args.path)
 
     if args.debug:
         logging.basicConfig(level=logging.DEBUG)
 
     path_list = args.path.split('/')
 
-    mount = find_mount(mount_points(), args.path)
-    LOGGER.debug('%r is under mount: %r', args.path, mount)
+    if args.command == 'log':
+        mount = find_mount(mount_points(), args.path)
+        LOGGER.debug('%r is under mount: %r', args.path, mount)
+        subvolumes = [x for x in get_subvolumes(mount) if x.commit]
 
-    subvolumes = get_subvolumes(mount)
 
-    if args.commit:
-        subvolumes = [x for x in subvolumes if re.search(args.commit, x.snapshot)]
+        if args.commit:
+            subvolumes = [x for x in subvolumes if re.search(args.commit, x.path)]
 
-        if not subvolumes:
-            raise Exception('No such subvolumes')
-        elif len(subvolumes) != 1:
-            raise Exception('Matches multiple commits')
+            if not subvolumes:
+                raise Exception('No such subvolumes')
+            elif len(subvolumes) != 1:
+                raise Exception('Matches multiple commits')
 
-    for subvolume in subvolumes:
-        creation_time = get_creation_time(subvolume.snapshot)
-        LOGGER.debug('Getting changed files for %r', subvolume)
-        changed_files = find_changed_files(mount, subvolume)
-        for filename in changed_files:
-            if args.no_files:
-                print creation_time, subvolume.snapshot
-                break
-            else:
+        for subvolume in subvolumes:
+            LOGGER.debug('Considering volume %r', subvolume)
+            changed_files = find_changed_files(mount, subvolume)
+            for filename in changed_files:
+                LOGGER.debug('Considering file %r', filename)
                 if is_subpath(args.path, filename):
-                    print creation_time, subvolume.snapshot, filename
-                    sys.stdout.flush()
+                    LOGGER.debug('Match! %r %r', args.path, filename)
+                    if args.no_files:
+                        print subvolume.creation_time, subvolume.commit, subvolume.path
+                        break
+
+                    else:
+                        print subvolume.creation_time, subvolume.commit, subvolume.path, filename
+                        sys.stdout.flush()
+
+    elif args.command == 'copy':
+        mount = find_mount(mount_points(), args.path)
+        subvolume, = [s for s in get_subvolumes(mount) if s.commit == args.commit]
+        source_path = os.path.join(subvolume.path, os.path.relpath(args.path, mount))
+
+        if args.target_path in (None, '-'):
+            if not os.path.isfile(source_path):
+                raise Exception('Can only stream regular files')
+            with open(source_path) as stream:
+                for line in stream:
+                    print line
+        else:
+            subprocess.check_call(['cp','-rp','--preserve', source_path, args.target_path])
+
+
+    elif args.command == 'volumes':
+        mount = find_mount(mount_points(), args.path)
+        for volume in get_subvolumes(mount):
+            print volume.path, volume.transaction, volume.old_transaction, volume.commit
+    else:
+        raise ValueError(args.command)
+
+
 
 def is_subpath(prefix, path):
     prefix = prefix.rstrip('/')
@@ -127,9 +170,11 @@ def get_creation_time(snapshot):
         raise Exception('Could not find creation time')
 
 
-
 def find_changed_files(mount, subvolume):
-    changes = subprocess.check_output(['btrfs', 'subvolume', 'find-new', subvolume.snapshot, subvolume.old_transaction])
+    command = ['btrfs', 'subvolume', 'find-new', subvolume.path, subvolume.old_transaction]
+    changes = subprocess.check_output(command)
+    LOGGER.debug('Running %r', ' '.join(command))
+
     files = []
 
     for index, line in enumerate(changes.splitlines()):
@@ -150,6 +195,8 @@ def find_changed_files(mount, subvolume):
 
         if filename.strip():
             files.append(filename)
+
+    LOGGER.debug('%r files changed in subvolume %r', len(files), subvolume)
 
     return files
 

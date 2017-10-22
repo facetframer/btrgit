@@ -1,4 +1,4 @@
-# btrlog
+# btrgit
 
 Like `git log` for btrfs snapshots. Homogenous output that is easy to grep (unlike git :P)
 
@@ -9,17 +9,17 @@ Adapted from answers here http://serverfault.com/questions/399894/does-btrfs-hav
 # Installing
 
 ```
-pip install git+https://github.com/facetframer/btrlog#egg=btrlog
+pip install git+https://github.com/facetframer/btrgit#egg=btrgit
 ```
 
 # Examples / Cheat sheet
 
 ```
 # Show what changes have recently happened to home
-btrlog /home
+btrgit /home
 
 # Show what changed in snapshot 443
-btrlog /home 443
+btrgit /home 443
 
 ```
 

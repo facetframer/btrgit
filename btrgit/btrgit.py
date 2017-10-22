@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# This is a hacky convenience tool
-
 import argparse
 import collections
 import itertools
@@ -18,7 +16,7 @@ import dateutil.parser
 LOGGER = logging.getLogger()
 
 def build_parser():
-    parser = argparse.ArgumentParser(prog='btrlog', description='An interface to btrfs that behaves like git')
+    parser = argparse.ArgumentParser(prog='btrgit', description='An interface to btrfs that behaves like git')
     parser.add_argument('--debug', action='store_true', help='Print debug output')
     parsers = parser.add_subparsers(dest='command')
 

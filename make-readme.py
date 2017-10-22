@@ -6,7 +6,7 @@ import argparse
 import os
 import subprocess
 
-import btrlog.btrlog as app
+import btrgit.btrgit as app
 
 HERE = os.path.dirname(__file__)
 

@@ -1,6 +1,8 @@
 # btrgit
 
-Like `git log` for btrfs snapshots. Homogenous output that is easy to grep (unlike git :P)
+Interact with [btrfs](https://btrfs.wiki.kernel.org/index.php/Main_Page) snapshots made with [snapper](http://snapper.io/documentation.html) in a manner reminiscent of `git`.
+
+Search for changes to files and restore old versions of files. Output is designed to be useable by other command line tools.
 
 # Attribution
 

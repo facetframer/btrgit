@@ -23,7 +23,7 @@ def build_parser():
     volumes_parser = parsers.add_parser('volumes', help='Show the subvolumes ')
     volumes_parser.add_argument('path', type=str)
 
-    log_parser = parsers.add_parser('log', help='Show changes made to a file')
+    log_parser = parsers.add_parser('log', help='Show changes made to a directory tree or files')
     log_parser.add_argument('path', type=str, help='Path to operate on', nargs='?', default='.')
     log_parser.add_argument('commit', nargs='?', help='Show what changed in this snapshot (regular expression)', type=str)
     log_parser.add_argument('--no-files', action='store_true', help='Do not show files that have changed (just snapshots)')

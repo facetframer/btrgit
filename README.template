@@ -18,10 +18,10 @@ pip install git+https://github.com/facetframer/btrgit#egg=btrgit
 
 ```
 # Show what changes have recently happened to home
-btrgit /home
+btrgit log /home
 
 # Show what changed in snapshot 443
-btrgit /home 443
+btrgit log /home 443
 
 ```
 
@@ -37,6 +37,7 @@ btrgit /home 443
 - An initial subset of features was adapted from [answers of server fault](http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots).
 - This ideas here very much represents [snapper's](http://snapper.io/documentation.html) existing feature through the metaphor of  [git](https://git-scm.com/)
 - https://github.com/sysnux/btrfs-snapshots-diff.git was a pre-existing project to see the difference between btrfs snapshots
+- [snapper gui](https://github.com/ricardomv/snapper-gui) is a gui which may well provide similar features.
 
 Influenced by `git`
 

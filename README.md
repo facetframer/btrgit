@@ -9,6 +9,10 @@ Search for changes to files and restore old versions of files. The output is des
 
 Adapted from [answers of server fault](http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots).
 
+# Author and maintainer
+
+[Facet](https://www.facetframer.com)
+
 # Installing
 
 ```

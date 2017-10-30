@@ -1,12 +1,12 @@
 # btrgit
 
-Interact with [btrfs](https://btrfs.wiki.kernel.org/index.php/Main_Page) snapshots made with [snapper](http://snapper.io/documentation.html) in a manner reminiscent of `git`.
+Interact with [btrfs](https://btrfs.wiki.kernel.org/index.php/Main_Page) snapshots made with [snapper](http://snapper.io/documentation.html) in a manner reminiscent of [git](https://git-scm.com/).
 
 Search for changes to files and restore old versions of files. Output is designed to be useable by other command line tools.
 
 # Attribution
 
-Adapted from answers here http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots.
+Adapted from [answers of server fault](http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots).
 
 # Installing
 
@@ -34,13 +34,12 @@ btrgit /home 443
 
 # Alternatives and prior work
 
-- Adapted from answers here: http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots
-- https://github.com/sysnux/btrfs-snapshots-diff.git
-- `snapper` provides similar features but requires you to specify versiosn (and use snapper)
+- An initial subset of features was adapted from [answers of server fault](http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots).
+- This ideas here very much represents [snapper's](http://snapper.io/documentation.html) existing feature through the metaphor of  [git](https://git-scm.com/)
+- https://github.com/sysnux/btrfs-snapshots-diff.git was a pre-existing project to see the difference between btrfs snapshots
 
 Influenced by `git`
 
 # Caveats
 
 - This approach uses `btrfs subvolumes find-new`, there is an alternative approach using `btrfs receive`.
-- If you read this code you might object to the shell one-liners it contains. These hep fast development.

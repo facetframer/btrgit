@@ -5,18 +5,17 @@ Interact with [btrfs](https://btrfs.wiki.kernel.org/index.php/Main_Page) snapsho
 
 Search for changes to files and restore old versions of files. The output is designed to be useable by other command line tools.
 
+Written and maintained by [Facet](https://www.facetframer.com/).
+
 # Attribution
 
 Adapted from [answers of server fault](http://serverfault.com/questions/399894/does-btrfs-have-an-efficient-way-to-compare-snapshots).
 
-# Author and maintainer
-
-[Facet](https://www.facetframer.com)
 
 # Installing
 
 ```
-pip install git+https://github.com/facetframer/btrgit#egg=btrgit
+pip install git+https://github.com/talwrii/btrgit#egg=btrgit
 ```
 
 # Examples / Cheat sheet

@@ -8,6 +8,7 @@ import os
 import os.path
 import pipes
 import re
+import shutil
 import subprocess
 import sys
 
@@ -22,6 +23,9 @@ def build_parser():
 
     volumes_parser = parsers.add_parser('volumes', help='Show the subvolumes ')
     volumes_parser.add_argument('path', type=str)
+
+    purge_parser = parsers.add_parser('purge', help='Remove files from all snapshots')
+    purge_parser.add_argument('path', type=str, help='Path to purge on')
 
     log_parser = parsers.add_parser('log', help='Show changes made to a directory tree or files')
     log_parser.add_argument('path', type=str, help='Path to operate on', nargs='?', default='.')
@@ -149,9 +153,30 @@ def main():
         mount = find_mount(mount_points(), args.path)
         for volume in get_subvolumes(mount):
             print volume.path, volume.transaction, volume.old_transaction, volume.commit
+    elif args.command == 'purge':
+        mount = find_mount(mount_points(), args.path)
+        purge_path = os.path.relpath(args.path, mount)
+        for volume in get_subvolumes(mount):
+            if volume.path == os.path.join(mount, '.snapshots'):
+                continue
+
+            LOGGER.debug('Purging %r in %r...', purge_path, volume)
+            purge_in_volume(volume, purge_path)
     else:
         raise ValueError(args.command)
 
+def purge_in_volume(volume, purge_path):
+    subprocess.check_call([
+        u'btrfs', u'property', u'set',
+        volume.path, u'ro', u'false'])
+    try:
+        delete_path = os.path.join(volume.path, purge_path)
+        if os.path.exists(delete_path):
+            shutil.rmtree(delete_path)
+    finally:
+        subprocess.check_call([
+            u'btrfs', u'property', u'set',
+            volume.path, u'ro', u'true'])
 
 
 def is_subpath(prefix, path):
